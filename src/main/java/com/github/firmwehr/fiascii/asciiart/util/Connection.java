@@ -1,7 +1,6 @@
 package com.github.firmwehr.fiascii.asciiart.util;
 
 import com.github.firmwehr.fiascii.asciiart.elements.AsciiElement;
-import com.github.firmwehr.fiascii.asciiart.util.Point;
 import java.util.Objects;
 
 public record Connection(

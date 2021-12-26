@@ -4,6 +4,7 @@ import static java.util.function.Predicate.not;
 
 import com.github.firmwehr.fiascii.asciiart.elements.AsciiBox;
 import com.github.firmwehr.fiascii.asciiart.elements.AsciiMergeNode;
+import com.github.firmwehr.fiascii.asciiart.util.Connection;
 import com.github.firmwehr.fiascii.util.StringReader;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -119,25 +120,49 @@ public class ClassGenerator {
 		if (!root.ins().isEmpty()) {
 			List<FilterElement> inFilters;
 			String className;
+			boolean sameInputs = false;
 			if (root.ins().get(0).start() instanceof AsciiMergeNode merge) {
 				className = "WithInputsUnorderedFilter";
 				inFilters = merge.in().stream().map(it -> convert((AsciiBox) it.start())).toList();
 			} else {
 				className = "WithInputsOrderedFilter";
 				inFilters = root.ins().stream().map(it -> convert((AsciiBox) it.start())).toList();
+				sameInputs = sameInputs(root);
 			}
 
-			String inputFilters =
-				inFilters.stream().map(FilterElement::filter).collect(Collectors.joining(",\n")).indent(4);
-			filter =
-				"new %s(\n  %s,\n  %s,\n  List.of(\n%s  )\n)".formatted(className, quotedName, filter,
-					inputFilters);
+			String inputFilters = inFilters.stream()
+				.map(FilterElement::filter)
+				.collect(Collectors.joining(",\n"))
+				.indent(4);
+			if (sameInputs) {
+				filter =
+					"new %s(\n  %s,\n  %s,\n  List.of(\n%s  ),\n  true\n)".formatted(
+						className, quotedName, filter, inputFilters
+					);
+			} else {
+				filter =
+					"new %s(\n  %s,\n  %s,\n  List.of(\n%s  )\n)".formatted(
+						className, quotedName, filter, inputFilters
+					);
+			}
 		}
 
 		FilterElement filterElement = new FilterElement(root, name, filter, nodeType);
 		elements.put(root, filterElement);
 
 		return filterElement;
+	}
+
+	private boolean sameInputs(AsciiBox box) {
+		long distinctSize = box.ins().stream().map(Connection::start).distinct().count();
+
+		if (distinctSize > 1 && distinctSize < box.ins().size()) {
+			throw new IllegalArgumentException(
+				"Partial same inputs are currently not supported. Please create an issue :^)"
+			);
+		}
+
+		return distinctSize == 1 && box.ins().size() > 1;
 	}
 
 	private record FilterElement(

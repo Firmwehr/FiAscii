@@ -5,16 +5,23 @@ import firm.nodes.Node;
 import java.util.List;
 import java.util.Map;
 
-public class WithInputsOrderedFilter implements
-	com.github.firmwehr.fiascii.asciiart.parsing.filter.NodeFilter {
-	private final String key;
-	private final com.github.firmwehr.fiascii.asciiart.parsing.filter.NodeFilter underlying;
-	private final List<com.github.firmwehr.fiascii.asciiart.parsing.filter.NodeFilter> inputs;
+public class WithInputsOrderedFilter implements NodeFilter {
 
-	public WithInputsOrderedFilter(String key, com.github.firmwehr.fiascii.asciiart.parsing.filter.NodeFilter underlying, List<NodeFilter> inputs) {
+	private final String key;
+	private final NodeFilter underlying;
+	private final List<NodeFilter> inputs;
+	private final boolean inputsSame;
+
+	public WithInputsOrderedFilter(String key, NodeFilter underlying, List<NodeFilter> inputs,
+		boolean inputsSame) {
 		this.key = key;
 		this.underlying = underlying;
 		this.inputs = inputs;
+		this.inputsSame = inputsSame;
+	}
+
+	public WithInputsOrderedFilter(String key, NodeFilter underlying, List<NodeFilter> inputs) {
+		this(key, underlying, inputs, false);
 	}
 
 	@Override
@@ -32,6 +39,16 @@ public class WithInputsOrderedFilter implements
 				return false;
 			}
 		}
+
+		if (inputsSame && preds.length > 0) {
+			Node current = preds[0];
+			for (int i = 1; i < preds.length; i++) {
+				if (!current.equals(preds[i])) {
+					return false;
+				}
+			}
+		}
+
 		return true;
 	}
 
