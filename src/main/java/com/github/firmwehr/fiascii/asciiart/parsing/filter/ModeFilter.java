@@ -3,16 +3,18 @@ package com.github.firmwehr.fiascii.asciiart.parsing.filter;
 import firm.Mode;
 import firm.nodes.Node;
 import java.util.Map;
-import java.util.function.Predicate;
 
 public class ModeFilter implements NodeFilter {
+
 	private final String key;
-	private final Predicate<Mode> modeFilter;
+	private final Mode expectedMode;
+	private final boolean negated;
 	private final NodeFilter underlying;
 
-	public ModeFilter(String key, Predicate<Mode> modeFilter, NodeFilter underlying) {
+	public ModeFilter(String key, Mode expectedMode, boolean negated, NodeFilter underlying) {
 		this.key = key;
-		this.modeFilter = modeFilter;
+		this.expectedMode = expectedMode;
+		this.negated = negated;
 		this.underlying = underlying;
 	}
 
@@ -21,7 +23,10 @@ public class ModeFilter implements NodeFilter {
 		if (!underlying.matches(node)) {
 			return false;
 		}
-		return modeFilter.test(node.getMode());
+		if (negated) {
+			return !expectedMode.equals(node.getMode());
+		}
+		return expectedMode.equals(node.getMode());
 	}
 
 	@Override

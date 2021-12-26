@@ -26,6 +26,8 @@ public class ClassGenerator {
 		String result = """
 			package com.github.firmwehr.fiascii.generated;
 
+			import firm.Mode;
+			import firm.nodes.*;
 			import firm.nodes.*;
 			import java.util.*;
 			import com.github.firmwehr.fiascii.asciiart.parsing.filter.*;
@@ -144,6 +146,18 @@ public class ClassGenerator {
 					"new %s(\n  %s,\n  %s,\n  List.of(\n%s  )\n)".formatted(
 						className, quotedName, filter, inputFilters
 					);
+			}
+		}
+
+		if (reader.peek() == ';') {
+			reader.readChar();
+			reader.readWhitespace();
+			char positivity = reader.readChar();
+			String property = reader.readWhile(Character::isLetter);
+			if (property.equals("memory")) {
+				filter = "new ModeFilter(\n  %s,\n  %s,\n  %s,\n  %s\n)".formatted(
+					quotedName, "Mode.getM()", positivity == '-' ? "true" : "false", filter
+				);
 			}
 		}
 
