@@ -6,7 +6,7 @@ import firm.nodes.Node;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 public class WithInputsUnorderedFilter implements NodeFilter {
 
@@ -22,15 +22,14 @@ public class WithInputsUnorderedFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean matches(Node node) {
-		if (!underlying.matches(node)) {
-			return false;
+	public boolean doesNotMatch(Node node) {
+		if (underlying.doesNotMatch(node)) {
+			return true;
 		}
-		return matchesAndDo(node, (filter, pred) -> {
-		});
+		return !matchesAndDo(node, (filter, pred) -> true);
 	}
 
-	private boolean matchesAndDo(Node node, BiConsumer<NodeFilter, Node> action) {
+	private boolean matchesAndDo(Node node, BiFunction<NodeFilter, Node, Boolean> action) {
 		Node[] preds = Iterables.toArray(node.getPreds(), Node.class);
 		if (preds.length != inputs.size()) {
 			return false;
@@ -39,7 +38,9 @@ public class WithInputsUnorderedFilter implements NodeFilter {
 		for (List<NodeFilter> filters : Collections2.permutations(inputs)) {
 			if (matches(preds, filters)) {
 				for (int i = 0; i < preds.length; i++) {
-					action.accept(filters.get(i), preds[i]);
+					if (!action.apply(filters.get(i), preds[i])) {
+						return false;
+					}
 				}
 				return true;
 			}
@@ -50,7 +51,7 @@ public class WithInputsUnorderedFilter implements NodeFilter {
 
 	private boolean matches(Node[] preds, List<NodeFilter> filters) {
 		for (int i = 0; i < preds.length; i++) {
-			if (!filters.get(i).matches(preds[i])) {
+			if (filters.get(i).doesNotMatch(preds[i])) {
 				return false;
 			}
 		}
@@ -58,8 +59,11 @@ public class WithInputsUnorderedFilter implements NodeFilter {
 	}
 
 	@Override
-	public void storeMatch(Map<String, Node> matches, Node matchedNode) {
-		matchesAndDo(matchedNode, (nodeFilter, node) -> nodeFilter.storeMatch(matches, node));
-		matches.put(key, matchedNode);
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
+		if (!matchesAndDo(matchedNode, (nodeFilter, node) -> nodeFilter.storeMatch(matches, node))) {
+			return false;
+		}
+		Node old = matches.put(key, matchedNode);
+		return old == null || old.equals(matchedNode);
 	}
 }

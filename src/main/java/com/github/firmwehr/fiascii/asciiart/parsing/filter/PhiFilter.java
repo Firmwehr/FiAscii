@@ -14,15 +14,16 @@ public class PhiFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean matches(Node node) {
+	public boolean doesNotMatch(Node node) {
 		if (node.getClass() != Phi.class) {
-			return false;
+			return true;
 		}
-		return shouldbeLoop == (((Phi) node).getLoop() == 1);
+		return shouldbeLoop != (((Phi) node).getLoop() == 1);
 	}
 
 	@Override
-	public void storeMatch(Map<String, Node> matches, Node matchedNode) {
-		matches.put(key, matchedNode);
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
+		Node old = matches.put(key, matchedNode);
+		return old == null || old.equals(matchedNode);
 	}
 }

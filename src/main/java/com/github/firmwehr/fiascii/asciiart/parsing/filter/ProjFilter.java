@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 
 public class ProjFilter implements NodeFilter {
+
 	private final String key;
 	private final OptionalInt number;
 
@@ -15,18 +16,19 @@ public class ProjFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean matches(Node node) {
+	public boolean doesNotMatch(Node node) {
 		if (node.getClass() != Proj.class) {
-			return false;
-		}
-		if (number.isEmpty()) {
 			return true;
 		}
-		return ((Proj) node).getNum() == number.getAsInt();
+		if (number.isEmpty()) {
+			return false;
+		}
+		return ((Proj) node).getNum() != number.getAsInt();
 	}
 
 	@Override
-	public void storeMatch(Map<String, Node> matches, Node matchedNode) {
-		matches.put(key, matchedNode);
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
+		Node old = matches.put(key, matchedNode);
+		return old == null || old.equals(matchedNode);
 	}
 }

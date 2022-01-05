@@ -19,19 +19,22 @@ public class ModeFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean matches(Node node) {
-		if (!underlying.matches(node)) {
-			return false;
+	public boolean doesNotMatch(Node node) {
+		if (underlying.doesNotMatch(node)) {
+			return true;
 		}
 		if (negated) {
-			return !expectedMode.equals(node.getMode());
+			return expectedMode.equals(node.getMode());
 		}
-		return expectedMode.equals(node.getMode());
+		return !expectedMode.equals(node.getMode());
 	}
 
 	@Override
-	public void storeMatch(Map<String, Node> matches, Node matchedNode) {
-		underlying.storeMatch(matches, matchedNode);
-		matches.put(key, matchedNode);
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
+		if (!underlying.storeMatch(matches, matchedNode)) {
+			return false;
+		}
+		Node old = matches.put(key, matchedNode);
+		return old == null || old.equals(matchedNode);
 	}
 }

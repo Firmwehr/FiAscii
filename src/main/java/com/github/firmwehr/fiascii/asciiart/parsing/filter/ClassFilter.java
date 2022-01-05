@@ -13,12 +13,13 @@ public class ClassFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean matches(Node node) {
-		return clazz.isAssignableFrom(node.getClass());
+	public boolean doesNotMatch(Node node) {
+		return !clazz.isAssignableFrom(node.getClass());
 	}
 
 	@Override
-	public void storeMatch(Map<String, Node> matches, Node matchedNode) {
-		matches.put(key, matchedNode);
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
+		Node old = matches.put(key, matchedNode);
+		return old == null || old.equals(matchedNode);
 	}
 }

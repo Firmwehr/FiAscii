@@ -4,7 +4,6 @@ import static java.util.function.Predicate.not;
 
 import com.github.firmwehr.fiascii.asciiart.elements.AsciiBox;
 import com.github.firmwehr.fiascii.asciiart.elements.AsciiMergeNode;
-import com.github.firmwehr.fiascii.asciiart.util.Connection;
 import com.github.firmwehr.fiascii.util.StringReader;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -76,11 +75,13 @@ public class ClassGenerator {
 
 		return """
 			public static Optional<Match> match(Node node) {
-			  if (!filter.matches(node)) {
+			  if (filter.doesNotMatch(node)) {
 			    return Optional.empty();
 			  }
 			  Map<String, Node> matches = new HashMap<>();
-			  filter.storeMatch(matches, node);
+			  if (!filter.storeMatch(matches, node)) {
+			    return Optional.empty();
+			  }
 			  Match match = new Match(
 			%s
 			  );
@@ -111,8 +112,10 @@ public class ClassGenerator {
 			filter = switch (nodeType) {
 				case "Cmp" -> "new CmpFilter(%s, firm.Relation.%s)".formatted(quotedName, argument);
 				case "Const" -> "new ConstFilter(%s, %s)".formatted(quotedName, argument);
-				case "Phi" -> "new PhiFilter(%s, %s)".formatted(quotedName,
-					argument.equals("+loop") ? "true" : "false");
+				case "Phi" -> "new PhiFilter(%s, %s)".formatted(
+					quotedName,
+					argument.equals("+loop") ? "true" : "false"
+				);
 				case "Proj" -> "new ProjFilter(%s, %s)".formatted(quotedName, argument);
 				default -> throw new IllegalArgumentException(
 					"This node does not take an argument: " + nodeType + " arg: " + argument);
@@ -122,31 +125,21 @@ public class ClassGenerator {
 		if (!root.ins().isEmpty()) {
 			List<FilterElement> inFilters;
 			String className;
-			boolean sameInputs = false;
 			if (root.ins().get(0).start() instanceof AsciiMergeNode merge) {
 				className = "WithInputsUnorderedFilter";
 				inFilters = merge.in().stream().map(it -> convert((AsciiBox) it.start())).toList();
 			} else {
 				className = "WithInputsOrderedFilter";
 				inFilters = root.ins().stream().map(it -> convert((AsciiBox) it.start())).toList();
-				sameInputs = sameInputs(root);
 			}
 
 			String inputFilters = inFilters.stream()
 				.map(FilterElement::filter)
 				.collect(Collectors.joining(",\n"))
 				.indent(4);
-			if (sameInputs) {
-				filter =
-					"new %s(\n  %s,\n  %s,\n  List.of(\n%s  ),\n  true\n)".formatted(
-						className, quotedName, filter, inputFilters
-					);
-			} else {
-				filter =
-					"new %s(\n  %s,\n  %s,\n  List.of(\n%s  )\n)".formatted(
-						className, quotedName, filter, inputFilters
-					);
-			}
+			filter = "new %s(\n  %s,\n  %s,\n  List.of(\n%s  )\n)".formatted(
+				className, quotedName, filter, inputFilters
+			);
 		}
 
 		if (reader.peek() == ';') {
@@ -165,18 +158,6 @@ public class ClassGenerator {
 		elements.put(root, filterElement);
 
 		return filterElement;
-	}
-
-	private boolean sameInputs(AsciiBox box) {
-		long distinctSize = box.ins().stream().map(Connection::start).distinct().count();
-
-		if (distinctSize > 1 && distinctSize < box.ins().size()) {
-			throw new IllegalArgumentException(
-				"Partial same inputs are currently not supported. Please create an issue :^)"
-			);
-		}
-
-		return distinctSize == 1 && box.ins().size() > 1;
 	}
 
 	private record FilterElement(

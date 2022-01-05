@@ -14,16 +14,17 @@ public class ConstFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean matches(Node node) {
+	public boolean doesNotMatch(Node node) {
 		if (node.getClass() != Const.class) {
-			return false;
+			return true;
 		}
 
-		return value == ((Const) node).getTarval().asLong();
+		return value != ((Const) node).getTarval().asLong();
 	}
 
 	@Override
-	public void storeMatch(Map<String, Node> matches, Node matchedNode) {
-		matches.put(key, matchedNode);
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
+		Node old = matches.put(key, matchedNode);
+		return old == null || old.equals(matchedNode);
 	}
 }
