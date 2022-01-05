@@ -1,5 +1,6 @@
 package com.github.firmwehr.fiascii.asciiart.parsing.filter;
 
+import com.github.firmwehr.fiascii.util.NodeComparator;
 import firm.nodes.Node;
 import firm.nodes.Proj;
 import java.util.Map;
@@ -29,6 +30,6 @@ public class ProjFilter implements NodeFilter {
 	@Override
 	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
 		Node old = matches.put(key, matchedNode);
-		return old == null || old.equals(matchedNode);
+		return old == null || NodeComparator.isSame(old, matchedNode);
 	}
 }

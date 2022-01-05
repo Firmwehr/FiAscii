@@ -1,5 +1,6 @@
 package com.github.firmwehr.fiascii.asciiart.parsing.filter;
 
+import com.github.firmwehr.fiascii.util.NodeComparator;
 import firm.Mode;
 import firm.nodes.Node;
 import java.util.Map;
@@ -35,6 +36,6 @@ public class ModeFilter implements NodeFilter {
 			return false;
 		}
 		Node old = matches.put(key, matchedNode);
-		return old == null || old.equals(matchedNode);
+		return old == null || NodeComparator.isSame(old, matchedNode);
 	}
 }

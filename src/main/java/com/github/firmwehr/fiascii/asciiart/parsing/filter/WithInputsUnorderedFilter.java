@@ -1,5 +1,6 @@
 package com.github.firmwehr.fiascii.asciiart.parsing.filter;
 
+import com.github.firmwehr.fiascii.util.NodeComparator;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import firm.nodes.Node;
@@ -64,6 +65,6 @@ public class WithInputsUnorderedFilter implements NodeFilter {
 			return false;
 		}
 		Node old = matches.put(key, matchedNode);
-		return old == null || old.equals(matchedNode);
+		return old == null || NodeComparator.isSame(old, matchedNode);
 	}
 }
