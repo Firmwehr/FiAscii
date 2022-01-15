@@ -61,7 +61,19 @@ public class ClassGenerator {
 			.indent(2)
 			.stripTrailing();
 
-		return "public record Match(\n  %s\n) {}".formatted(fields);
+		List<String> fieldNames = elements.values()
+			.stream()
+			.sorted(Comparator.comparing(FilterElement::name))
+			.map(FilterElement::name)
+			.toList();
+
+		String nodesMethod = """
+			public Set<Node> matchedNodes() {
+			  return Set.of(%s);
+			}
+			""".formatted(String.join(", ", fieldNames)).indent(2).stripTrailing();
+
+		return "public record Match(\n  %s\n) {\n%s\n}".formatted(fields, nodesMethod);
 	}
 
 	private String buildMatchMethod() {
