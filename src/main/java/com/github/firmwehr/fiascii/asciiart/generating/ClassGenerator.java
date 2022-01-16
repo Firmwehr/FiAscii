@@ -29,6 +29,7 @@ public class ClassGenerator {
 			import firm.nodes.*;
 			import firm.nodes.*;
 			import java.util.*;
+			import com.github.firmwehr.fiascii.asciiart.generating.BaseMatch;
 			import com.github.firmwehr.fiascii.asciiart.parsing.filter.*;
 			      
 			public class %s {
@@ -68,12 +69,14 @@ public class ClassGenerator {
 			.toList();
 
 		String nodesMethod = """
+			@Override
 			public Set<Node> matchedNodes() {
 			  return Set.of(%s);
 			}
 			""".formatted(String.join(", ", fieldNames)).indent(2).stripTrailing();
 
-		return "public record Match(\n  %s\n) {\n%s\n}".formatted(fields, nodesMethod);
+		return "public record Match(\n  %s\n) implements BaseMatch {\n%s\n}".formatted(fields,
+			nodesMethod);
 	}
 
 	private String buildMatchMethod() {
