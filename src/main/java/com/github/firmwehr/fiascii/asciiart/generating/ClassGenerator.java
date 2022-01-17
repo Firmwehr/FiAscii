@@ -68,15 +68,30 @@ public class ClassGenerator {
 			.map(FilterElement::name)
 			.toList();
 
-		String nodesMethod = """
+		String matchedNodesMethod = """
 			@Override
 			public Set<Node> matchedNodes() {
 			  return Set.of(%s);
 			}
 			""".formatted(String.join(", ", fieldNames)).indent(2).stripTrailing();
 
-		return "public record Match(\n  %s\n) implements BaseMatch {\n%s\n}".formatted(fields,
-			nodesMethod);
+		List<String> markedFieldnames = elements.values()
+			.stream()
+			.sorted(Comparator.comparing(FilterElement::name))
+			.filter(FilterElement::marked)
+			.map(FilterElement::name)
+			.toList();
+
+		String markedNodeMethod = """
+
+			@Override
+			public Set<Node> markedNodes() {
+			  return Set.of(%s);
+			}
+			""".formatted(String.join(", ", markedFieldnames)).indent(2).stripTrailing();
+
+		return "public record Match(\n  %s\n) implements BaseMatch {\n%s\n%s\n}".formatted(fields,
+			matchedNodesMethod, markedNodeMethod);
 	}
 
 	private String buildMatchMethod() {
@@ -114,6 +129,10 @@ public class ClassGenerator {
 		StringReader reader = new StringReader(String.join(" ", root.lines()));
 		reader.readWhitespace();
 		String name = reader.readWhile(c -> c != ':');
+		boolean marked = name.startsWith("*");
+		if (marked) {
+			name = name.substring(1);
+		}
 		String quotedName = '"' + name + '"';
 		reader.readChar();
 		reader.readWhitespace();
@@ -169,7 +188,7 @@ public class ClassGenerator {
 			}
 		}
 
-		FilterElement filterElement = new FilterElement(root, name, filter, nodeType);
+		FilterElement filterElement = new FilterElement(root, name, filter, nodeType, marked);
 		elements.put(root, filterElement);
 
 		return filterElement;
@@ -179,7 +198,8 @@ public class ClassGenerator {
 		AsciiBox element,
 		String name,
 		String filter,
-		String type
+		String type,
+		boolean marked
 	) {
 
 	}

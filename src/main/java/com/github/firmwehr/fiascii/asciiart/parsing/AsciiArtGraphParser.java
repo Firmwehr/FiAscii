@@ -31,21 +31,21 @@ import java.util.Set;
 
 public class AsciiArtGraphParser {
 	private static final String EXAMPLE = """
-		  ┌─────────────────┐    ┌────────┐
-		  │typeSize: Const 1│    │index: *│
-		  └───────────┬─────┘    └───┬────┘
-		              │              │
-		              └─────┐   ┌────┘
-		                    │   │
-		┌────────┐       ┌──▼───▼────┐
-		│ base: *│       │offset: Add│
-		└────┬───┘       └─────┬─────┘
-		     │                 │
-		     └───────┬─────────┘
-		             │
-		      ┌──────▼─────┐
-		      │address: Add│
-		      └────────────┘""";
+		   ┌─────────────────┐    ┌────────┐
+		   │typeSize: Const 1│    │index: *│
+		   └───────────┬─────┘    └───┬────┘
+		               │              │
+		               └─────┐   ┌────┘
+		                     │   │
+		┌─────────┐       ┌──▼───▼────┐
+		│ *base: *│       │offset: Add│
+		└─────┬───┘       └─────┬─────┘
+		      │                 │
+		      └───────┬─────────┘
+		              │
+		       ┌──────▼─────┐
+		       │address: Add│
+		       └────────────┘""";
 
 	private final AsciiGrid grid;
 	private final Map<Point, AsciiBox> boxMap;

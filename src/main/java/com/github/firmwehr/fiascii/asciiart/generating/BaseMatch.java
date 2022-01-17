@@ -7,4 +7,6 @@ public interface BaseMatch {
 
 	Set<Node> matchedNodes();
 
+	Set<Node> markedNodes();
+
 }
