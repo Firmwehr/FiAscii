@@ -5,10 +5,11 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import firm.nodes.Node;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 
+@SuppressWarnings("UnstableApiUsage")
 public class WithInputsUnorderedFilter implements NodeFilter {
 
 	private final String key;
@@ -27,27 +28,19 @@ public class WithInputsUnorderedFilter implements NodeFilter {
 		if (underlying.doesNotMatch(node)) {
 			return true;
 		}
-		return !matchesAndDo(node, (filter, pred) -> true);
-	}
 
-	private boolean matchesAndDo(Node node, BiFunction<NodeFilter, Node, Boolean> action) {
 		Node[] preds = Iterables.toArray(node.getPreds(), Node.class);
 		if (preds.length != inputs.size()) {
-			return false;
+			return true;
 		}
 
 		for (List<NodeFilter> filters : Collections2.permutations(inputs)) {
 			if (matches(preds, filters)) {
-				for (int i = 0; i < preds.length; i++) {
-					if (!action.apply(filters.get(i), preds[i])) {
-						return false;
-					}
-				}
-				return true;
+				return false;
 			}
 		}
 
-		return false;
+		return true;
 	}
 
 	private boolean matches(Node[] preds, List<NodeFilter> filters) {
@@ -61,10 +54,40 @@ public class WithInputsUnorderedFilter implements NodeFilter {
 
 	@Override
 	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
-		if (!matchesAndDo(matchedNode, (nodeFilter, node) -> nodeFilter.storeMatch(matches, node))) {
+		// We only enter this method if #doesNotMatch is false (i.e. it matched)
+		Node[] preds = Iterables.toArray(matchedNode.getPreds(), Node.class);
+
+		// We could not add our node as it failed the "same node" constraints. No further match
+		// necessary.
+		Node ourOld = matches.put(key, matchedNode);
+		if (ourOld != null && !NodeComparator.isSame(ourOld, matchedNode)) {
 			return false;
 		}
-		Node old = matches.put(key, matchedNode);
-		return old == null || NodeComparator.isSame(old, matchedNode);
+
+		// Copy as we might need to rewrite it a few times
+		Map<String, Node> finalExistingMatches = new HashMap<>(matches);
+
+		permutationsLoop:
+		for (List<NodeFilter> filters : Collections2.permutations(inputs)) {
+			// This permutation is a correct one for basic class based matchers
+			// We still need to verify the "same node" constraints hold
+			if (matches(preds, filters)) {
+
+				// Check every input filter recursively
+				for (int i = 0; i < preds.length; i++) {
+					if (!filters.get(i).storeMatch(finalExistingMatches, preds[i])) {
+						// Rollback, try next permutation
+						finalExistingMatches = new HashMap<>(matches);
+						continue permutationsLoop;
+					}
+				}
+
+				// Match was successful! Commit and return
+				matches.putAll(finalExistingMatches);
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
