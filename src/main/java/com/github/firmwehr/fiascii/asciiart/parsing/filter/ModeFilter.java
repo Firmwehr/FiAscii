@@ -20,6 +20,11 @@ public class ModeFilter implements NodeFilter {
 	}
 
 	@Override
+	public String key() {
+		return key;
+	}
+
+	@Override
 	public boolean doesNotMatch(Node node) {
 		if (underlying.doesNotMatch(node)) {
 			return true;
@@ -31,11 +36,18 @@ public class ModeFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
-		if (!underlying.storeMatch(matches, matchedNode)) {
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode, Backedges backedges) {
+		if (!underlying.storeMatch(matches, matchedNode, backedges)) {
 			return false;
 		}
 		Node old = matches.put(key, matchedNode);
 		return old == null || NodeComparator.isSame(old, matchedNode);
+	}
+
+	@Override
+	public void buildBackedges(Node matchedNode, Backedges backedges) {
+		underlying.buildBackedges(matchedNode, backedges);
+		backedges.addEdge(underlying.key(), key());
+		backedges.addEdge(matchedNode, matchedNode);
 	}
 }

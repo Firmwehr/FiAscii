@@ -16,6 +16,11 @@ public class ConstFilter implements NodeFilter {
 	}
 
 	@Override
+	public String key() {
+		return key;
+	}
+
+	@Override
 	public boolean doesNotMatch(Node node) {
 		if (node.getClass() != Const.class) {
 			return true;
@@ -25,7 +30,7 @@ public class ConstFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode, Backedges backedges) {
 		Const old = (Const) matches.put(key, matchedNode);
 		return old == null || NodeComparator.isSame(old, matchedNode);
 	}

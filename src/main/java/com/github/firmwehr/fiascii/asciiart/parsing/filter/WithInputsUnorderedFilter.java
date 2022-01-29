@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @SuppressWarnings("UnstableApiUsage")
 public class WithInputsUnorderedFilter implements NodeFilter {
@@ -21,6 +22,11 @@ public class WithInputsUnorderedFilter implements NodeFilter {
 		this.key = key;
 		this.underlying = underlying;
 		this.inputs = inputs;
+	}
+
+	@Override
+	public String key() {
+		return key;
 	}
 
 	@Override
@@ -53,7 +59,7 @@ public class WithInputsUnorderedFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode, Backedges backedges) {
 		// We only enter this method if #doesNotMatch is false (i.e. it matched)
 		Node[] preds = Iterables.toArray(matchedNode.getPreds(), Node.class);
 
@@ -75,7 +81,17 @@ public class WithInputsUnorderedFilter implements NodeFilter {
 
 				// Check every input filter recursively
 				for (int i = 0; i < preds.length; i++) {
-					if (!filters.get(i).storeMatch(finalExistingMatches, preds[i])) {
+					NodeFilter filter = filters.get(i);
+
+					Set<String> childKeys = backedges.getForKey(filter.key());
+					Set<Node> childNodes = backedges.getForNode(preds[i]);
+
+					boolean matchFailed = childKeys.size() != childNodes.size();
+					if (!matchFailed) {
+						matchFailed = !filter.storeMatch(finalExistingMatches, preds[i], backedges);
+					}
+
+					if (matchFailed) {
 						// Rollback, try next permutation
 						finalExistingMatches = new HashMap<>(matches);
 						continue permutationsLoop;
@@ -89,5 +105,26 @@ public class WithInputsUnorderedFilter implements NodeFilter {
 		}
 
 		return false;
+	}
+
+	@Override
+	public void buildBackedges(Node matchedNode, Backedges backedges) {
+		Node[] preds = Iterables.toArray(matchedNode.getPreds(), Node.class);
+
+		for (Node pred : preds) {
+			backedges.addEdge(pred, matchedNode);
+		}
+
+		for (List<NodeFilter> filters : Collections2.permutations(inputs)) {
+			if (matches(preds, filters)) {
+				for (int i = 0; i < filters.size(); i++) {
+					filters.get(i).buildBackedges(preds[i], backedges);
+				}
+			}
+		}
+
+		for (NodeFilter inputFilter : inputs) {
+			backedges.addEdge(inputFilter.key(), key());
+		}
 	}
 }

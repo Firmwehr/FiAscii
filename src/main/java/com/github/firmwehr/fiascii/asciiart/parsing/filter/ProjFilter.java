@@ -17,6 +17,11 @@ public class ProjFilter implements NodeFilter {
 	}
 
 	@Override
+	public String key() {
+		return key;
+	}
+
+	@Override
 	public boolean doesNotMatch(Node node) {
 		if (node.getClass() != Proj.class) {
 			return true;
@@ -28,7 +33,7 @@ public class ProjFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode, Backedges backedges) {
 		Node old = matches.put(key, matchedNode);
 		return old == null || NodeComparator.isSame(old, matchedNode);
 	}

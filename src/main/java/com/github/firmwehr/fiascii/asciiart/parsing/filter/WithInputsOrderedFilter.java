@@ -19,6 +19,11 @@ public class WithInputsOrderedFilter implements NodeFilter {
 	}
 
 	@Override
+	public String key() {
+		return key;
+	}
+
+	@Override
 	public boolean doesNotMatch(Node node) {
 		if (underlying.doesNotMatch(node)) {
 			return true;
@@ -38,15 +43,29 @@ public class WithInputsOrderedFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode, Backedges backedges) {
 		Node[] preds = Iterables.toArray(matchedNode.getPreds(), Node.class);
 		for (int i = 0; i < preds.length; i++) {
-			if (!inputs.get(i).storeMatch(matches, preds[i])) {
+			if (!inputs.get(i).storeMatch(matches, preds[i], backedges)) {
 				return false;
 			}
 		}
 
 		Node old = matches.put(key, matchedNode);
 		return old == null || NodeComparator.isSame(old, matchedNode);
+	}
+
+	@Override
+	public void buildBackedges(Node matchedNode, Backedges backedges) {
+		Node[] preds = Iterables.toArray(matchedNode.getPreds(), Node.class);
+
+		for (int i = 0; i < preds.length; i++) {
+			inputs.get(i).buildBackedges(preds[i], backedges);
+			backedges.addEdge(preds[i], matchedNode);
+		}
+
+		for (NodeFilter inputFilter : inputs) {
+			backedges.addEdge(inputFilter.key(), key());
+		}
 	}
 }

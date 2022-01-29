@@ -6,12 +6,18 @@ import firm.nodes.Phi;
 import java.util.Map;
 
 public class PhiFilter implements NodeFilter {
+
 	private final String key;
 	private final boolean shouldbeLoop;
 
 	public PhiFilter(String key, boolean shouldbeLoop) {
 		this.key = key;
 		this.shouldbeLoop = shouldbeLoop;
+	}
+
+	@Override
+	public String key() {
+		return key;
 	}
 
 	@Override
@@ -23,7 +29,7 @@ public class PhiFilter implements NodeFilter {
 	}
 
 	@Override
-	public boolean storeMatch(Map<String, Node> matches, Node matchedNode) {
+	public boolean storeMatch(Map<String, Node> matches, Node matchedNode, Backedges backedges) {
 		Node old = matches.put(key, matchedNode);
 		return old == null || NodeComparator.isSame(old, matchedNode);
 	}

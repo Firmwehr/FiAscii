@@ -108,8 +108,10 @@ public class ClassGenerator {
 			  if (filter.doesNotMatch(node)) {
 			    return Optional.empty();
 			  }
+			  NodeFilter.Backedges backedges = new NodeFilter.Backedges();
+			  filter.buildBackedges(node, backedges);
 			  Map<String, Node> matches = new HashMap<>();
-			  if (!filter.storeMatch(matches, node)) {
+			  if (!filter.storeMatch(matches, node, backedges)) {
 			    return Optional.empty();
 			  }
 			  Match match = new Match(
